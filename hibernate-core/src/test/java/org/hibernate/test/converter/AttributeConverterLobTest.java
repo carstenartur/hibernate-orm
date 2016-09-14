@@ -23,11 +23,20 @@ import javax.persistence.Id;
 import javax.persistence.Lob;
 import javax.persistence.Table;
 
+import org.hibernate.HibernateException;
 import org.hibernate.Session;
+import org.hibernate.annotations.Immutable;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
 import org.hibernate.query.Query;
 import org.hibernate.testing.junit4.BaseCoreFunctionalTestCase;
+import org.hibernate.type.descriptor.WrapperOptions;
+import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
+import org.hibernate.type.descriptor.java.ImmutableMutabilityPlan;
+import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
+import org.hibernate.type.descriptor.java.MutabilityPlan;
+import org.hibernate.type.descriptor.java.MutableMutabilityPlan;
+import org.hibernate.type.descriptor.java.SerializableTypeDescriptor;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -41,6 +50,7 @@ import static org.junit.Assert.assertEquals;
 public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
+		JavaTypeDescriptorRegistry.INSTANCE.addDescriptor( new MyTypeDescriptor(EntityImpl.class, ImmutableMutabilityPlan.INSTANCE ) );
 		return new Class[] { EntityImpl.class };
 	}
 	
@@ -125,5 +135,55 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 		@Lob
 		@Convert(converter = ConverterImpl.class)
 		private Map status;
+	}
+	
+	public class MyTypeDescriptor<T> extends AbstractTypeDescriptor<T> {
+
+		
+		protected MyTypeDescriptor(Class type, MutabilityPlan mutabilityPlan) {
+			super(type, createMutabilityPlan(type));
+		}
+
+		
+		@Override
+		public String toString(T value) {
+			return value == null ? "<null>" : value.toString();
+		}
+
+		@Override
+		public T fromString(String string) {
+			throw new HibernateException(
+					"Not known how to convert String to given type [" + getJavaTypeClass().getName() + "]"
+			);
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
+		public <X> X unwrap(T value, Class<X> type, WrapperOptions options) {
+			return (X) value;
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
+		public <X> T wrap(X value, WrapperOptions options) {
+			return (T) value;
+		}
+
+	}
+	@SuppressWarnings("unchecked")
+	private static <T> MutabilityPlan<T> createMutabilityPlan(final Class<T> type) {
+		if ( type.isAnnotationPresent( Immutable.class ) ) {
+			return ImmutableMutabilityPlan.INSTANCE;
+		}
+		// MutableMutabilityPlan is the "safest" option, but we do not necessarily know how to deepCopy etc...
+		return new MutableMutabilityPlan<T>() {
+			@Override
+			protected T deepCopyNotNull(T value) {
+				throw new HibernateException(
+						"Not known how to deep copy value of type: [" + type
+								.getName() + "]"
+				);
+			}
+		};
 	}
 }
