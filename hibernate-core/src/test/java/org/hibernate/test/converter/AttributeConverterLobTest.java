@@ -6,6 +6,8 @@
  */
 package org.hibernate.test.converter;
 
+import static org.junit.Assert.assertEquals;
+
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
@@ -14,7 +16,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Convert;
@@ -24,23 +25,13 @@ import javax.persistence.Id;
 import javax.persistence.Lob;
 import javax.persistence.Table;
 
-import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.annotations.Immutable;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
 import org.hibernate.query.Query;
 import org.hibernate.testing.junit4.BaseCoreFunctionalTestCase;
-import org.hibernate.type.descriptor.WrapperOptions;
-import org.hibernate.type.descriptor.java.AbstractTypeDescriptor;
-import org.hibernate.type.descriptor.java.ImmutableMutabilityPlan;
-import org.hibernate.type.descriptor.java.JavaTypeDescriptorRegistry;
-import org.hibernate.type.descriptor.java.MutabilityPlan;
-import org.hibernate.type.descriptor.java.MutableMutabilityPlan;
-import org.hibernate.type.descriptor.java.SerializableTypeDescriptor;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * HHH-11098
@@ -77,12 +68,9 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 		session.getTransaction().commit();
 		session.close();
 		/**
-		 * What? Why the hell 2 and not 1?
+		 * Thanks to Steve Ebersole now only 1 access using @Immutable annotation
 		 */
 		assertEquals(1,ConverterImpl.todatabasecounter);
-		/**
-		 * Why a from database conversion at all?
-		 */
 		assertEquals(0,ConverterImpl.fromdatabasecounter);
 		
 		session = openSession();
