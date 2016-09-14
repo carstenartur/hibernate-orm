@@ -11,6 +11,7 @@ import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,9 +49,11 @@ import static org.junit.Assert.assertEquals;
  * @author Carsten Hammer
  */
 public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
+	public AttributeConverterLobTest() {
+		
+	}
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
-		JavaTypeDescriptorRegistry.INSTANCE.addDescriptor( new MyTypeDescriptor(EntityImpl.class, ImmutableMutabilityPlan.INSTANCE ) );
 		return new Class[] { EntityImpl.class };
 	}
 	
@@ -93,10 +96,10 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 		 * Why again a to database conversion? These conversions are very expensive and should only be done if really needed..
 		 * The second level cache is on! There should be no need to do another conversion..
 		 */
-		assertEquals(3,ConverterImpl.todatabasecounter);
-		assertEquals(3,ConverterImpl.fromdatabasecounter);
+		assertEquals(2,ConverterImpl.todatabasecounter);
+		assertEquals(2,ConverterImpl.fromdatabasecounter);
 		assertEquals("table",resultList.get(0 ).status.get( "key" ));
-		assertEquals(3,ConverterImpl.fromdatabasecounter);
+		assertEquals(2,ConverterImpl.fromdatabasecounter);
 	}
 
 	@Converter
@@ -128,62 +131,13 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 
 	@Entity(name = "EntityImpl")
 	@Table( name = "EntityImpl" )
-	public static class EntityImpl {
+	@Immutable
+	public static class EntityImpl implements Serializable {
 		@Id
 		private Integer id;
 
 		@Lob
 		@Convert(converter = ConverterImpl.class)
 		private Map status;
-	}
-	
-	public class MyTypeDescriptor<T> extends AbstractTypeDescriptor<T> {
-
-		
-		protected MyTypeDescriptor(Class type, MutabilityPlan mutabilityPlan) {
-			super(type, createMutabilityPlan(type));
-		}
-
-		
-		@Override
-		public String toString(T value) {
-			return value == null ? "<null>" : value.toString();
-		}
-
-		@Override
-		public T fromString(String string) {
-			throw new HibernateException(
-					"Not known how to convert String to given type [" + getJavaTypeClass().getName() + "]"
-			);
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public <X> X unwrap(T value, Class<X> type, WrapperOptions options) {
-			return (X) value;
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public <X> T wrap(X value, WrapperOptions options) {
-			return (T) value;
-		}
-
-	}
-	@SuppressWarnings("unchecked")
-	private static <T> MutabilityPlan<T> createMutabilityPlan(final Class<T> type) {
-		if ( type.isAnnotationPresent( Immutable.class ) ) {
-			return ImmutableMutabilityPlan.INSTANCE;
-		}
-		// MutableMutabilityPlan is the "safest" option, but we do not necessarily know how to deepCopy etc...
-		return new MutableMutabilityPlan<T>() {
-			@Override
-			protected T deepCopyNotNull(T value) {
-				throw new HibernateException(
-						"Not known how to deep copy value of type: [" + type
-								.getName() + "]"
-				);
-			}
-		};
 	}
 }
