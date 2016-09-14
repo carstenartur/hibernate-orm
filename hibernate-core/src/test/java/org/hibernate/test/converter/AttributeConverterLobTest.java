@@ -46,7 +46,7 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 	@Override
 	public void configure(Configuration cfg) {
 		super.configure( cfg );
-//		cfg.setProperty( Environment.USE_SECOND_LEVEL_CACHE, "true" );
+		cfg.setProperty( Environment.USE_SECOND_LEVEL_CACHE, "true" );
 		cfg.setProperty( Environment.GENERATE_STATISTICS, "true" );
 	}
 
@@ -80,6 +80,7 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 		session.close();
 		/**
 		 * Why again a to database conversion? These conversions are very expensive and should only be done if really needed..
+		 * The second level cache is on! There should be no need to do another conversion..
 		 */
 		assertEquals(3,ConverterImpl.todatabasecounter);
 		assertEquals(3,ConverterImpl.fromdatabasecounter);
