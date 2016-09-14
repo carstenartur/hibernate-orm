@@ -69,7 +69,7 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 		Session session = openSession();
 		session.beginTransaction();
 		EntityImpl object = new EntityImpl();
-		object.status=new HashMap<>();
+		object.status=new MyMap<>();
 		object.status.put( "asdf", Integer.valueOf( 6 ) );
 		object.status.put( "key", "table" );
 		object.id=1;
@@ -79,11 +79,11 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 		/**
 		 * What? Why the hell 2 and not 1?
 		 */
-		assertEquals(2,ConverterImpl.todatabasecounter);
+		assertEquals(1,ConverterImpl.todatabasecounter);
 		/**
 		 * Why a from database conversion at all?
 		 */
-		assertEquals(1,ConverterImpl.fromdatabasecounter);
+		assertEquals(0,ConverterImpl.fromdatabasecounter);
 		
 		session = openSession();
 		session.beginTransaction();
@@ -92,36 +92,34 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 		assertEquals(1,resultList.size());
 		session.getTransaction().commit();
 		session.close();
-		/**
-		 * Why again a to database conversion? These conversions are very expensive and should only be done if really needed..
-		 * The second level cache is on! There should be no need to do another conversion..
-		 */
-		assertEquals(2,ConverterImpl.todatabasecounter);
-		assertEquals(2,ConverterImpl.fromdatabasecounter);
+		
+		assertEquals(1,ConverterImpl.todatabasecounter);
+		assertEquals(1,ConverterImpl.fromdatabasecounter);
 		assertEquals("table",resultList.get(0 ).status.get( "key" ));
-		assertEquals(2,ConverterImpl.fromdatabasecounter);
+		assertEquals(1,ConverterImpl.fromdatabasecounter);
 	}
 
 	@Converter
-	public static class ConverterImpl implements AttributeConverter<Map, byte[]> {
+	public static class ConverterImpl implements AttributeConverter<MyMap<String, Object>, byte[]> {
 		public static int todatabasecounter=0;
 		public static int fromdatabasecounter=0;
 		@Override
-		public byte[] convertToDatabaseColumn(Map map) {
+		public byte[] convertToDatabaseColumn(MyMap<String, Object> map) {
 			todatabasecounter++;
 			ByteArrayOutputStream out=new ByteArrayOutputStream();
 			try(XMLEncoder encoder=new XMLEncoder(out)){
 				encoder.writeObject( map );
+				encoder.flush();
 			}
 			return out.toByteArray();
 		}
 
 		@Override
-		public Map convertToEntityAttribute(byte[] dbData) {
+		public MyMap<String, Object> convertToEntityAttribute(byte[] dbData) {
 			fromdatabasecounter++;
-			try(ByteArrayInputStream in=new ByteArrayInputStream(dbData)){
-				XMLDecoder decoder=new XMLDecoder(in);
-				return (Map) decoder.readObject();
+			try(ByteArrayInputStream in=new ByteArrayInputStream(dbData);
+					XMLDecoder decoder=new XMLDecoder(in)){
+				return (MyMap<String, Object>) decoder.readObject();
 			}
 			catch (IOException e) {
 				return null;
@@ -131,13 +129,16 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 
 	@Entity(name = "EntityImpl")
 	@Table( name = "EntityImpl" )
-	@Immutable
 	public static class EntityImpl implements Serializable {
 		@Id
 		private Integer id;
 
 		@Lob
 		@Convert(converter = ConverterImpl.class)
-		private Map status;
+		private MyMap<String, Object> status;
+	}
+	
+	@Immutable
+	public static class MyMap<String, Object> extends HashMap<String, Object>{
 	}
 }
