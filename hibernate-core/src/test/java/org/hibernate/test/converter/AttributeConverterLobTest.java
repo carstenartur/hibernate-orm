@@ -14,7 +14,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -27,9 +26,6 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Lob;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-
 import org.hibernate.Session;
 import org.hibernate.annotations.Immutable;
 import org.hibernate.cfg.Configuration;
@@ -45,10 +41,6 @@ import org.junit.Test;
  */
 public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 
-	public AttributeConverterLobTest() {
-
-	}
-
 	@Override
 	protected Class<?>[] getAnnotatedClasses() {
 		return new Class[]{ EntityImpl.class };
@@ -61,6 +53,9 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 		cfg.setProperty( Environment.GENERATE_STATISTICS, "true" );
 	}
 
+/**
+ * 
+ */
 //	@Test
 //	public void testsave_withoutImmutable() {
 //		ConverterImpl.fromdatabasecounter = 0;
@@ -313,11 +308,7 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 		@Column
 		@Lob
 		@Convert(converter = ConverterImpl.class)
-		private MyMap<String, Object> status;
-
-		@Column
-		@Temporal(TemporalType.TIMESTAMP)
-		private Date active;
+		private MyMap<String, Object> status;	
 	}
 
 	@Immutable
