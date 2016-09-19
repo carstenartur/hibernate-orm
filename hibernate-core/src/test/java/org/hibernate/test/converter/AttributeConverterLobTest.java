@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.AttributeConverter;
+import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Converter;
@@ -300,6 +301,7 @@ public class AttributeConverterLobTest extends BaseCoreFunctionalTestCase {
 
 	@Entity(name = "EntityImpl")
 	@Table(name = "EntityImpl")
+	@Cacheable
 	public static class EntityImpl implements Serializable {
 
 		@Id
